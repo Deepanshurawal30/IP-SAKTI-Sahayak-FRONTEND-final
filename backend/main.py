@@ -19,7 +19,10 @@ app.add_middleware(
 PDF_DIR = os.path.join(os.path.dirname(__file__), "documents")
 TEMP_IMG_DIR = os.path.join(os.path.dirname(__file__), "temp_images")
 os.makedirs(TEMP_IMG_DIR, exist_ok=True)
+
+# Mount directories for static access
 app.mount("/images", StaticFiles(directory=TEMP_IMG_DIR), name="images")
+app.mount("/documents", StaticFiles(directory=PDF_DIR), name="documents")
 
 # --- Pydantic Models ---
 class SahayakQuery(BaseModel):
@@ -48,6 +51,9 @@ class UITranslationQuery(BaseModel):
     texts: list[str]
     target_language: str
 
+class TKSearchQuery(BaseModel):
+    query: str
+
 
 @app.get("/")
 def root():
@@ -59,7 +65,7 @@ def root():
 def translate_ui(payload: UITranslationQuery):
     if payload.target_language == "en" or not payload.target_language:
         return {"translated": payload.texts}
-    
+     
     translated_list = []
     for text in payload.texts:
         try:
@@ -78,7 +84,7 @@ def ask_sahayak(payload: SahayakQuery):
     target_lang = payload.language
 
     english_query = user_query if target_lang == "en" else translate_text(user_query, source_lang=target_lang, target_lang="en")
-    search_words = [w.lower() for w in english_query.split()]
+    search_words = [w.lower() for w in english_query.split() if len(w) > 3]
 
     matched_content = "No matching regulatory guideline found in the uploaded PDFs."
     matched_image_url = None
@@ -108,8 +114,22 @@ def ask_sahayak(payload: SahayakQuery):
                     if score > best_score:
                         best_score = score
                         best_page_idx = page_num
-                        matched_content = page_text[:1200].replace('\n', ' ')
                         best_source = filename
+                        
+                        match_idx = -1
+                        for word in search_words:
+                            idx = content_lower.find(word)
+                            if idx != -1:
+                                match_idx = idx
+                                break
+                        
+                        if match_idx != -1:
+                            start_idx = max(0, match_idx - 150)
+                            end_idx = min(len(page_text), match_idx + 650)
+                            snippet = page_text[start_idx:end_idx].replace('\n', ' ')
+                            matched_content = f"...{snippet}..."
+                        else:
+                            matched_content = page_text[:800].replace('\n', ' ')
                         
                         pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
                         img_filename = "proof_page.png"
@@ -123,7 +143,7 @@ def ask_sahayak(payload: SahayakQuery):
                 continue
 
     if best_score > 0:
-        response_text = f"Official Grounded Guideline (Found in {best_source}, Page {best_page_idx + 1}):\n\n{matched_content}..."
+        response_text = f"Official Grounded Guideline (Found in {best_source}, Page {best_page_idx + 1}):\n\n{matched_content}"
     else:
         response_text = matched_content
 
@@ -238,3 +258,102 @@ def abs_check(payload: ABSQuery):
         "image_proof": image_url,
         "source": target_pdf
     }
+
+
+# --- 5. LIST ALL SOURCES ENDPOINT ---
+@app.get("/api/sources")
+def list_sources():
+    sources_list = []
+    if os.path.exists(PDF_DIR):
+        for idx, filename in enumerate(os.listdir(PDF_DIR)):
+            if filename.lower().endswith(".pdf"):
+                file_path = os.path.join(PDF_DIR, filename)
+                file_size_kb = round(os.path.getsize(file_path) / 1024, 1)
+                sources_list.append({
+                    "id": f"{idx+1:02d}",
+                    "filename": filename,
+                    "title": filename.replace("_", " ").replace(".pdf", "").title(),
+                    "size_kb": file_size_kb,
+                    "download_url": f"http://127.0.0.1:8000/documents/{filename}"
+                })
+    return {"sources": sources_list}
+
+
+# --- 6. TRADITIONAL KNOWLEDGE ENDPOINTS ---
+@app.get("/api/traditional-knowledge-info")
+def get_tk_info():
+    return {
+        "introduction": "Traditional Knowledge (TK) refers to knowledge, know-how, skills, and practices developed, sustained, and passed down from generation to generation within a community. In India, repositories like the Traditional Knowledge Digital Library (TKDL)—established by CSIR and the Ministry of Ayush—contain hundreds of thousands of digitized formulations from Ayurveda, Unani, Siddha, Sowa Rigpa, and Yoga to prevent biopiracy and wrongful patent grants.",
+        "enlisted_formulations": [
+            {
+                "id": "TK-01",
+                "title": "Turmeric (Curcuma longa Linn.) - Wound Healing & Anti-inflammatory",
+                "category": "Ayurvedic Formulation / Medicinal Use",
+                "description": "Rhizomes traditionally used as a spice and for healing wounds, rashes, and reducing inflammation.",
+                "statutory_status": "Protected under Section 3(p) of the Patents Act / Prior Art documented globally."
+            },
+            {
+                "id": "TK-02",
+                "title": "Neem (Azadirachta indica) - Fungicidal & Pest Control",
+                "category": "Botanical / Traditional Agriculture & Medicine",
+                "description": "Widely documented in ancient texts for its insecticidal, therapeutic, and skin-healing properties.",
+                "statutory_status": "Prior art recognized; unpatentable as raw natural formulation."
+            },
+            {
+                "id": "TK-03",
+                "title": "Ashwagandha (Withania somnifera) - Rasayana & Vitality",
+                "category": "Ayurvedic Rasayana",
+                "description": "Classified under classical Ayurvedic literature for promoting longevity, immunity, and stress relief.",
+                "statutory_status": "Codified under traditional literature reference compendiums."
+            },
+            {
+                "id": "TK-04",
+                "title": "Basmati Rice - Specific Geographic Strains",
+                "category": "Agricultural Heritage",
+                "description": "Distinct aromatic rice strains traditionally cultivated in the Indian subcontinent.",
+                "statutory_status": "Protected via Geographical Indications (GI) and agricultural prior art registries."
+            },
+            {
+                "id": "TK-05",
+                "title": "Gugulipid (Commiphora mukul) - Lipid Metabolism",
+                "category": "Ayurvedic Pharmacopoeia",
+                "description": "Gum resin extract traditionally utilized for managing lipid disorders and inflammation.",
+                "statutory_status": "Indexed in TKDL database under classical Ayurvedic therapeutic codes."
+            },
+            {
+                "id": "TK-06",
+                "title": "Brahmmi (Bacopa monnieri) - Nootropic / Memory Enhancement",
+                "category": "Medhya Rasayana",
+                "description": "Traditional brain tonic used for cognitive enhancement, memory retention, and calming anxiety.",
+                "statutory_status": "Prior art documented across classical Ayurvedic manuscripts."
+            }
+        ]
+    }
+
+@app.post("/api/traditional-knowledge-search")
+def search_tk(payload: TKSearchQuery):
+    q = payload.query.lower()
+    search_terms = [term for term in q.split() if len(term) > 2]
+    
+    registry = [
+        {"name": "Turmeric / Curcuma longa", "keywords": ["turmeric", "curcuma", "wound", "heal", "skin", "rash", "anti-inflammatory"], "details": "Matches traditional wound-healing and medicinal uses. Barred under Section 3(p) of the Patents Act unless a truly inventive non-obvious process/derivative is claimed."},
+        {"name": "Neem / Azadirachta indica", "keywords": ["neem", "azadirachta", "pest", "fungal", "insect", "soap", "skin", "agricultural"], "details": "Matches traditional agricultural and therapeutic botanical uses. Considered established global prior art."},
+        {"name": "Ashwagandha / Withania somnifera", "keywords": ["ashwagandha", "somnifera", "sleep", "vitality", "stress", "rasayana", "root", "immunity"], "details": "Classified under classical Ayurvedic Rasayana formulations for vitality and longevity. Subject to prior art documentation."},
+        {"name": "Basmati Rice", "keywords": ["basmati", "rice", "grain", "aromatic", "crop"], "details": "Protected under regional agricultural heritage criteria and geographical indication (GI) prior art."},
+        {"name": "Brahmi / Bacopa monnieri", "keywords": ["brahmi", "bacopa", "memory", "brain", "cognitive", "nootropic", "xiety"], "details": "Listed under traditional Medhya Rasayana texts for cognitive enhancement and neurological support."},
+        {"name": "Guggulu / Commiphora mukul", "keywords": ["guggulu", "gugulipid", "lipid", "cholesterol", "resin", "gum"], "details": "Documented in Ayurvedic pharmacopoeia for managing metabolic parameters and inflammatory conditions."}
+    ]
+    
+    matched_results = []
+    for item in registry:
+        score = sum(1 for term in search_terms if any(kw in term or term in kw for kw in item["keywords"]))
+        if score > 0 or any(kw in q for kw in item["keywords"]):
+            matched_results.append({
+                "name": item["name"],
+                "match_found": True,
+                "details": item["details"]
+            })
+            
+    if matched_results:
+        return {"status": "Prior Art Match / Potential Conflict Detected", "matches": matched_results}
+    return {"status": "No direct traditional knowledge conflict found in baseline public registry subset."}
