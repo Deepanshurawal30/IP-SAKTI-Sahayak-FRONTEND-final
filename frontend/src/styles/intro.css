@@ -1,0 +1,116 @@
+/* ============================================================
+   INTRO · LANGUAGE SELECT · CHOOSE YOUR PATH
+   ============================================================ */
+
+.intro-screen{
+  position:fixed; inset:0; z-index:100; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(227,180,94,.10), transparent 45%),
+    radial-gradient(circle at 82% 85%, rgba(44,102,80,.35), transparent 50%),
+    var(--forest-deeper);
+  color:var(--ivory);
+}
+.intro-skip{
+  position:absolute; top:24px; right:24px; z-index:5;
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(239,231,210,.55); border:1px solid rgba(239,231,210,.2); padding:8px 16px; border-radius:999px;
+  transition:all var(--dur-sm) var(--ease);
+}
+.intro-skip:hover{color:var(--ivory); border-color:rgba(239,231,210,.5);}
+
+.intro-mark{width:56px; height:56px; margin:0 auto 28px;}
+.intro-eyebrow{
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.32em; text-transform:uppercase;
+  color:var(--saffron-light); text-align:center; margin-bottom:22px;
+}
+.intro-title{
+  font-family:'Fraunces',serif; font-weight:600; text-align:center; line-height:1.02;
+  font-size:clamp(48px, 9vw, 108px); letter-spacing:-.01em; color:var(--ivory); margin:0;
+}
+.intro-title .word{display:inline-block; overflow:hidden; vertical-align:top;}
+.intro-title .word > span{display:inline-block;}
+.intro-sub{
+  text-align:center; margin-top:22px; font-size:15.5px; color:rgba(239,231,210,.62);
+  max-width:520px; margin-left:auto; margin-right:auto; line-height:1.6;
+}
+.intro-enter{
+  margin:40px auto 0; display:flex; justify-content:center;
+}
+.intro-wipe{
+  position:fixed; inset:0; z-index:110; background:var(--ivory); transform-origin:bottom;
+}
+
+/* ---------- Language selection ---------- */
+.lang-screen{
+  position:fixed; inset:0; z-index:100; overflow-y:auto;
+  background:
+    radial-gradient(circle at 85% 0%, rgba(192,138,46,.10), transparent 50%),
+    var(--forest-deeper);
+  color:var(--ivory); padding:64px 24px 80px;
+}
+.lang-head{max-width:640px; margin:0 auto 44px; text-align:center;}
+.lang-head .eyebrow{color:var(--saffron-light);}
+.lang-head h2{font-size:clamp(28px,4vw,40px); margin:12px 0 10px; color:var(--ivory);}
+.lang-head p{color:rgba(239,231,210,.6); font-size:15px; line-height:1.6; margin:0;}
+
+.lang-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+  max-width:920px; margin:0 auto;
+}
+@media(max-width:900px){.lang-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:560px){.lang-grid{grid-template-columns:repeat(2,1fr);}}
+
+.lang-card{
+  position:relative; padding:20px 16px; border-radius:14px; text-align:left;
+  background:rgba(239,231,210,.04); border:1px solid rgba(239,231,210,.14);
+  transition:transform var(--dur-sm) var(--ease), border-color var(--dur-sm) var(--ease), background var(--dur-sm) var(--ease);
+}
+.lang-card:hover{transform:translateY(-3px) scale(1.015); border-color:rgba(227,180,94,.45); background:rgba(239,231,210,.07);}
+.lang-card:active{transform:translateY(-1px) scale(.99);}
+.lang-card .native{font-family:'Fraunces',serif; font-size:19px; font-weight:600; color:var(--ivory); margin-bottom:3px;}
+.lang-card .english{font-size:11.5px; color:rgba(239,231,210,.5); font-family:'IBM Plex Mono',monospace; letter-spacing:.04em;}
+.lang-card .check{
+  position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%;
+  border:1.5px solid rgba(239,231,210,.3); display:flex; align-items:center; justify-content:center;
+  transition:all var(--dur-sm) var(--ease); opacity:0;
+}
+.lang-card.selected{
+  border-color:var(--saffron-light); background:rgba(227,180,94,.09);
+  box-shadow:0 0 0 1px rgba(227,180,94,.35), 0 12px 32px -12px rgba(227,180,94,.35);
+}
+.lang-card.selected .check{opacity:1; border-color:var(--saffron-light); background:var(--saffron-light); color:var(--forest-deep);}
+.lang-card.selected .native{color:var(--saffron-light);}
+
+.lang-footer{max-width:920px; margin:44px auto 0; display:flex; justify-content:center;}
+
+/* ---------- Choose your path ---------- */
+.path-screen{min-height:100vh; background:var(--ivory); padding:72px 24px 80px;}
+.path-head{max-width:720px; margin:0 auto 44px; text-align:center;}
+.path-head h2{font-size:clamp(28px,4vw,42px); color:var(--forest-deep); margin:12px 0 10px;}
+.path-head p{color:#6B6350; font-size:15.5px; line-height:1.6; margin:0;}
+
+.path-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; max-width:1040px; margin:0 auto;}
+@media(max-width:900px){.path-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.path-grid{grid-template-columns:1fr;}}
+
+.path-card{
+  text-align:left; padding:26px 24px; border-radius:var(--radius-lg); background:#fff;
+  border:1px solid var(--line); box-shadow:var(--shadow);
+  transition:transform var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease), box-shadow var(--dur-sm) var(--ease);
+  display:flex; flex-direction:column; height:100%;
+}
+.path-card:hover{transform:translateY(-5px); border-color:var(--forest-mid); box-shadow:var(--shadow-lg);}
+.path-card .ic{
+  width:44px; height:44px; border-radius:12px; background:var(--forest-pale); color:var(--forest);
+  display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  transition:transform var(--dur-sm) var(--ease-out), background var(--dur-sm) var(--ease);
+}
+.path-card:hover .ic{transform:scale(1.08) rotate(-4deg); background:var(--saffron-pale); color:var(--warn);}
+.path-card h3{font-size:17px; margin:0 0 8px; font-weight:600; color:var(--charcoal);}
+.path-card p{font-size:13.5px; color:#6B6350; line-height:1.55; margin:0 0 16px; flex:1;}
+.path-card .go{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--forest); font-family:'IBM Plex Mono',monospace; letter-spacing:.04em;}
+.path-card .go svg{transition:transform var(--dur-sm) var(--ease);}
+.path-card:hover .go svg{transform:translateX(3px);}
+
+.path-skip{max-width:1040px; margin:36px auto 0; text-align:center;}

@@ -3,3 +3,5 @@ node_modules/
 .DS_Store
 temp_images/
 .env
+.ideavo/project
+*.log
